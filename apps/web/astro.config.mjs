@@ -2,18 +2,17 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
-// https://astro.build/config
 export default defineConfig({
 	site: 'https://sivadotblog.github.io',
 	base: '/Vishwakarma',
 	integrations: [
 		starlight({
-			title: 'My Docs',
+			title: 'Vishwakarma',
 			social: [
 				{
 					icon: 'github',
 					label: 'GitHub',
-					href: 'https://github.com/withastro/starlight',
+					href: 'https://github.com/sivadotblog/Vishwakarma',
 				},
 			],
 			sidebar: [
@@ -21,7 +20,7 @@ export default defineConfig({
 					label: 'Guides',
 					items: [
 						// Each item here is one entry in the navigation menu.
-						{ label: 'Example Guide', slug: 'guides/example' },
+						{ label: 'Getting started', slug: 'guides/getting-started' },
 					],
 				},
 				{
