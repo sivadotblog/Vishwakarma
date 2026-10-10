@@ -1,9 +1,8 @@
 name: CI
 
+# PRs only: main changes land through PRs, which already ran these checks.
 on:
   pull_request:
-  push:
-    branches: [main]
 
 permissions:
   contents: read
