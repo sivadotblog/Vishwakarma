@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose a change or new capability.
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [web (apps/web), api (apps/api), CI / tooling, Not sure]
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this solve, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How will we know it is done? One checkable item per line.
+      placeholder: |
+        - [ ]
+    validations:
+      required: true
