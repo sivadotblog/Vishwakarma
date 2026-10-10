@@ -1,0 +1,57 @@
+name: Vishwakarma (software factory)
+
+# Labeling an issue `vk` hands it to the software factory, which works it
+# end to end and opens a draft PR. See packages/software-factory/README.md.
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: vishwakarma-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  factory:
+    if: github.event.label.name == 'vk'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      # GitHub fires `labeled` even for labels attached at issue creation, so
+      # only run for labelers with at least triage permission.
+      - name: Check labeler permission
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SENDER: ${{ github.event.sender.login }}
+        run: |
+          role=$(gh api "repos/${{ github.repository }}/collaborators/$SENDER/permission" --jq .role_name)
+          echo "$SENDER has role: $role"
+          case "$role" in
+            admin|maintain|write|triage) ;;
+            *) echo "::error::$SENDER cannot hand issues to the factory"; exit 1 ;;
+          esac
+
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.0
+      - run: make setup-python
+
+      - name: Run software factory
+        env:
+          GITHUB_TOKEN: ${{ secrets.FACTORY_GITHUB_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FACTORY_MODEL: ${{ vars.FACTORY_MODEL || 'gemini/gemini-3.5-flash' }}
+          FACTORY_REPO: ${{ github.repository }}
+          FACTORY_STATE_DIR: ${{ runner.temp }}/factory-state
+        run: uv run --package software-factory software-factory issue ${{ github.event.issue.number }} --unattended
+
+      - name: Report failure on the issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} \
+            --body "The software factory run failed. Log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

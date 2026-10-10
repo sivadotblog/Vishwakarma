@@ -1,0 +1,42 @@
+{
+  "enabledPlugins": {
+    "agent-skills@addy-agent-skills": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(make setup)",
+      "Bash(make check)",
+      "Bash(make lint)",
+      "Bash(make typecheck)",
+      "Bash(make test)",
+      "Bash(make build)",
+      "Bash(make format)",
+      "Bash(uv sync:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(uv run mypy:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv tree:*)",
+      "Bash(npm run check:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm ci)"
+    ],
+    "deny": [
+      "Bash(pip install:*)",
+      "Bash(git push origin main:*)",
+      "Bash(git push --force:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format-python.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

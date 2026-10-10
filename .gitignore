@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node / Astro
+node_modules/
+.astro/
+
+# Reference-only TypeScript original
+/software-factory/
