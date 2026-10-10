@@ -4,10 +4,18 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
+	site: 'https://sivadotblog.github.io',
+	base: '/Vishwakarma',
 	integrations: [
 		starlight({
 			title: 'My Docs',
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
+			social: [
+				{
+					icon: 'github',
+					label: 'GitHub',
+					href: 'https://github.com/withastro/starlight',
+				},
+			],
 			sidebar: [
 				{
 					label: 'Guides',
