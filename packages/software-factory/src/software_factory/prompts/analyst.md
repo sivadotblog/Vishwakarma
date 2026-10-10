@@ -8,6 +8,7 @@ The factory's target repository is checked out at `{repo_dir}`. Use it:
 
 - Read the actual files before naming them in `affected_surface`. A plan that names files that don't exist wastes an implementation cycle.
 - Discover the repository's own conventions and record what the implementer needs: the package manager, the lint/typecheck/test commands (from package.json, CI config, or a contributing guide), the code style in the surrounding files.
+- Read every `AGENTS.md` or `CLAUDE.md` in the directories the change touches (the root ones are already in your instructions) and carry their rules into the plan: the commands to run, and anything they forbid.
 - Trace the code path the work item touches instead of reasoning from the file names alone.
 - Do not modify anything. You plan; the implementer changes files.
 

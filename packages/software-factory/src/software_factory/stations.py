@@ -19,6 +19,9 @@ from software_factory.tooling import Tool
 from software_factory.tools import artifact_tools, harness_tools
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
+# Agent instruction files a target repo may carry at its root, in injection order.
+REPO_INSTRUCTION_FILES = ("AGENTS.md", "CLAUDE.md")
+MAX_REPO_INSTRUCTIONS = 20_000  # characters per file
 
 ToolBuilder = Callable[[Config, Path, str | None], list[Tool]]
 
@@ -62,7 +65,30 @@ class Station:
     def prompt(self, cfg: Config, repo_dir: Path | None) -> str:
         text = (PROMPTS_DIR / f"{self.name}.md").read_text(encoding="utf-8")
         text = text.replace("{repo}", cfg.repo)
-        return text.replace("{repo_dir}", str(repo_dir) if repo_dir else "")
+        text = text.replace("{repo_dir}", str(repo_dir) if repo_dir else "")
+        return text + repo_instructions(repo_dir) if repo_dir else text
+
+
+def repo_instructions(repo_dir: Path) -> str:
+    """The target repo's own agent instructions, so stations follow its toolchain and rules."""
+    sections = []
+    for name in REPO_INSTRUCTION_FILES:
+        path = repo_dir / name
+        if not path.is_file():
+            continue
+        body = path.read_text(encoding="utf-8", errors="replace")
+        if len(body) > MAX_REPO_INSTRUCTIONS:
+            body = body[:MAX_REPO_INSTRUCTIONS] + "\n[truncated]"
+        sections.append(f"### {name}\n\n{body.strip()}")
+    if not sections:
+        return ""
+    header = (
+        "\n\n## Repository instructions\n\n"
+        "The target repository ships these instructions for agents working in it. Follow them:"
+        " they decide the package manager, the check commands, and the hard rules, and they"
+        " override your own habits.\n\n"
+    )
+    return header + "\n\n".join(sections) + "\n"
 
 
 STATIONS: dict[str, Station] = {
