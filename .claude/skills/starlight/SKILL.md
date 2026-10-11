@@ -40,4 +40,4 @@ Before non-trivial work, check <https://starlight.astro.build> (guides, componen
 
 ## Verify
 
-`make check` (runs `astro check` and a full build — broken links in the sidebar fail the build).
+`make check` (runs Prettier and a full build — broken links in the sidebar fail the build).

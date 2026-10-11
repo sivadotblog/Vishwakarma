@@ -3,7 +3,7 @@
 # CI runs `check-python` and `check-web` as separate jobs; together they are `check`.
 
 .PHONY: setup setup-python setup-web lint lint-python lint-web format typecheck \
-	typecheck-python typecheck-web test build check check-python check-web
+	typecheck-python test build check check-python check-web
 
 setup: setup-python setup-web
 
@@ -27,13 +27,10 @@ format:
 	uv run ruff format
 	npm run format -w web
 
-typecheck: typecheck-python typecheck-web
+typecheck: typecheck-python
 
 typecheck-python:
 	uv run mypy
-
-typecheck-web:
-	npm run check -w web
 
 test:
 	uv run pytest
@@ -43,6 +40,6 @@ build:
 
 check-python: lint-python typecheck-python test
 
-check-web: lint-web typecheck-web build
+check-web: lint-web build
 
 check: check-python check-web

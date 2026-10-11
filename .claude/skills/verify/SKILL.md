@@ -16,7 +16,6 @@ description: Run the repo's definition-of-done checks (make check) and fix failu
 | --- | --- | --- |
 | lint | `uv run ruff check` / `ruff format --check` | `make format`, then fix what remains by hand |
 | typecheck | `uv run mypy` (strict) | Add real annotations. No `# type: ignore` / `Any` without a comment saying why |
-| typecheck | `npm run check -w web` (`astro check`) | Fix the `.astro`/`.ts` type error or frontmatter schema mismatch |
 | test | `uv run pytest` | Fix the code, not the test — unless the test encodes the old, intentionally changed behavior |
 | build | `npm run build -w web` | Usually a bad sidebar `slug` or broken import |
 

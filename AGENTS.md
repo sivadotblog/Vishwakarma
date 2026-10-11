@@ -6,7 +6,7 @@ Monorepo demonstrating a fully autonomous development lifecycle: issue → triag
 
 | Path                | What                                                     | Tooling                                     |
 | ------------------- | -------------------------------------------------------- | ------------------------------------------- |
-| `apps/web`          | Frontend, Astro Starlight                                | npm workspaces (`-w web`), `astro check`    |
+| `apps/web`          | Frontend, Astro Starlight                                | npm workspaces (`-w web`), `astro build`    |
 | `apps/api`          | Python backend (`src/` layout, package `api`)            | uv workspace, ruff, mypy `--strict`, pytest |
 | `packages/software-factory` | Python port of the software factory (issue → PR → review-fix), LiteLLM + requests | uv workspace, ruff, mypy `--strict`, pytest |
 | `software-factory/` | Original TypeScript (Vercel eve), git-ignored reference only. Don't touch. | — |
