@@ -4,7 +4,7 @@ import starlight from '@astrojs/starlight';
 
 export default defineConfig({
 	site: 'https://sivadotblog.github.io',
-	base: '/Vishwakarma',
+	base: '/vishwakarma',
 	integrations: [
 		starlight({
 			title: 'Vishwakarma',
@@ -12,7 +12,7 @@ export default defineConfig({
 				{
 					icon: 'github',
 					label: 'GitHub',
-					href: 'https://github.com/sivadotblog/Vishwakarma',
+					href: 'https://github.com/sivadotblog/vishwakarma',
 				},
 			],
 			sidebar: [
