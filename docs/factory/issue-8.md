@@ -39,7 +39,7 @@ Run `npm install --save-dev typescript@^6.0.3 -w web` from repo root to update `
 
 ## Implementation
 
-Branch `factory/fix-pin-typescript-6` (base `main`).
+Branch `vk/fix-pin-typescript-6` (base `main`).
 
 ### Change summary
 

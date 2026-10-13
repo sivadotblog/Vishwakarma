@@ -222,6 +222,3 @@ __marimo__/
 # Node / Astro
 node_modules/
 .astro/
-
-# Reference-only TypeScript original
-/software-factory/
