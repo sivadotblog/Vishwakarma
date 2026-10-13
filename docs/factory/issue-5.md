@@ -47,7 +47,7 @@ Update Starlight config in apps/web/astro.config.mjs (title, social link, sideba
 
 ## Implementation
 
-Branch `factory/issue-5-rebrand-docs` (base `main`).
+Branch `vk/issue-5-rebrand-docs` (base `main`).
 
 ### Change summary
 

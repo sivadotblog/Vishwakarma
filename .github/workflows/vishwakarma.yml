@@ -1,7 +1,7 @@
 name: Vishwakarma (software factory)
 
 # Labeling an issue `vk` hands it to the software factory, which works it
-# end to end and opens a draft PR. See packages/software-factory/README.md.
+# end to end and opens a draft PR. See packages/vk/README.md.
 
 on:
   issues:
@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  factory:
+  vk:
     if: github.event.label.name == 'vk'
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -39,14 +39,14 @@ jobs:
       - uses: astral-sh/setup-uv@v10.3.0
       - run: make setup-python
 
-      - name: Run software factory
+      - name: Run VK
         env:
-          GITHUB_TOKEN: ${{ secrets.FACTORY_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.VK_GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          FACTORY_MODEL: ${{ vars.FACTORY_MODEL || 'gemini/gemini-3.5-flash' }}
-          FACTORY_REPO: ${{ github.repository }}
-          FACTORY_STATE_DIR: ${{ runner.temp }}/factory-state
-        run: uv run --package software-factory software-factory issue ${{ github.event.issue.number }} --unattended
+          VK_MODEL: ${{ vars.VK_MODEL || 'gemini/gemini-3.5-flash' }}
+          VK_REPO: ${{ github.repository }}
+          VK_STATE_DIR: ${{ runner.temp }}/vk-state
+        run: uv run --package vk vk issue ${{ github.event.issue.number }} --unattended
 
       - name: Report failure on the issue
         if: failure()

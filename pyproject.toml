@@ -1,6 +1,6 @@
 # Virtual uv workspace root: holds shared dev tooling, no package of its own.
 [tool.uv.workspace]
-members = ["apps/api", "packages/software-factory"]
+members = ["apps/api", "packages/vk"]
 
 [dependency-groups]
 dev = [
@@ -12,17 +12,16 @@ dev = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-extend-exclude = ["./software-factory"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["api", "software_factory"]
+known-first-party = ["api", "vk"]
 
 [tool.mypy]
 strict = true
-files = ["apps/api/src", "apps/api/tests", "packages/software-factory/src", "packages/software-factory/tests"]
+files = ["apps/api/src", "apps/api/tests", "packages/vk/src", "packages/vk/tests"]
 
 [tool.pytest.ini_options]
-testpaths = ["apps/api/tests", "packages/software-factory/tests"]
+testpaths = ["apps/api/tests", "packages/vk/tests"]
