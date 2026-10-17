@@ -1,6 +1,8 @@
 """Command line: `vk issue|review|ci-fix <N> [--unattended]`."""
 
 import argparse
+import logging
+import os
 import sys
 from collections.abc import Sequence
 
@@ -127,6 +129,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    logging.basicConfig(
+        level=os.environ.get("VK_LOG_LEVEL", "INFO").upper(),
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        stream=sys.stderr,
+    )
     unattended = bool(args.unattended) or not sys.stdin.isatty()
     n: int = args.number
     if args.command == "issue":

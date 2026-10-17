@@ -1,6 +1,8 @@
 """VK: orchestrator prompt plus the tools it routes work with."""
 
 import getpass
+import logging
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -18,6 +20,8 @@ from vk.tools import (
     preference_tools,
     skill_tools,
 )
+
+log = logging.getLogger(__name__)
 
 VK_PROMPT = Path(__file__).parent / "prompts" / "vk.md"
 _MESSAGE_SCHEMA = {
@@ -101,6 +105,8 @@ def run_vk(
     gh = gh or GitHub(cfg)
     system = VK_PROMPT.read_text(encoding="utf-8").replace("{repo}", cfg.repo)
     extra = {"complete": complete} if complete is not None else {}
+    log.info("vk starting repo=%s model=%s", cfg.repo, cfg.model_for("orchestrator"))
+    started = time.monotonic()
     reply = llm.run_agent(
         model=cfg.model_for("orchestrator"),
         system=system,
@@ -110,6 +116,8 @@ def run_vk(
         ),
         output_schema=None,
         max_output_tokens=cfg.max_output_tokens,
+        name="orchestrator",
         **extra,
     )
+    log.info("vk finished in %.1fs", time.monotonic() - started)
     return str(reply)

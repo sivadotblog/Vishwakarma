@@ -6,6 +6,7 @@ never `origin`.
 """
 
 import base64
+import logging
 import os
 import re
 import subprocess
@@ -14,6 +15,8 @@ from pathlib import Path
 
 from vk.config import Config
 from vk.tooling import Tool, ToolError
+
+log = logging.getLogger(__name__)
 
 PROTECTED_BRANCHES = {"main", "master"}
 BRANCH_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._/-]*[A-Za-z0-9])?$")
@@ -110,6 +113,7 @@ def clone_repo(cfg: Config, dest: Path | None = None, *, remote_url: str | None 
     parent.mkdir(parents=True, exist_ok=True)
     repo_dir = Path(tempfile.mkdtemp(prefix="repo-", dir=parent)) / "repo"
     url = remote_url or remote_url_for(cfg)
+    log.info("git clone repo=%s dest=%s", cfg.repo, repo_dir)
     _run(
         cfg, ["clone", "--depth", "50", url, str(repo_dir)], None, remote_url=remote_url, auth=True
     )
@@ -143,6 +147,7 @@ def checkout_branch(
     if refusal:
         return {"error": refusal, "success": False}
     url = remote_url or remote_url_for(cfg)
+    log.info("git checkout branch=%s", branch)
     try:
         _run(cfg, ["fetch", url, branch], repo_dir, remote_url=remote_url, auth=True)
         _run(cfg, ["checkout", "-B", branch, "FETCH_HEAD"], repo_dir, auth=False)
@@ -159,6 +164,7 @@ def push_branch(
     if refusal:
         return {"error": refusal, "success": False}
     url = remote_url or remote_url_for(cfg)
+    log.info("git push branch=%s", branch)
     try:
         _run(
             cfg,
@@ -187,6 +193,7 @@ def commit_file(
     if not target.is_relative_to(root) or ".git" in target.relative_to(root).parts:
         raise GitError(f'"{path}" is outside the repository.')
     token = cfg.github_token if cfg else None
+    log.info("git commit_file branch=%s path=%s", branch, path)
 
     def git(*args: str) -> str:
         proc = subprocess.run(
