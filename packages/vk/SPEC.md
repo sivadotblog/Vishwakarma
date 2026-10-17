@@ -107,7 +107,7 @@ uv add --package vk <pkg>      # deps (needs a justification in the PR)
 Env: `GITHUB_TOKEN` (required), `VK_MODEL` (required), `VK_MODEL_<CLAN>`,
 the provider's API key under LiteLLM's standard name, `VK_SETUP_COMMAND`,
 `VK_BRANCH_PREFIX` (`vk/`), `VK_STATE_DIR` (`~/.vk`),
-`VK_MAX_OUTPUT_TOKENS` (100000).
+`VK_MAX_OUTPUT_TOKENS` (100000), `VK_LOG_LEVEL` (`INFO`; logs go to stderr).
 
 ## Project Structure
 

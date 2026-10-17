@@ -1,6 +1,7 @@
 """Tests for the tool-calling loop using a scripted fake `complete`."""
 
 import json
+import logging
 from types import SimpleNamespace
 from typing import Any
 
@@ -25,11 +26,17 @@ def call(name: str, args: dict[str, Any], cid: str = "c1") -> SimpleNamespace:
 
 
 def turn(
-    calls: list[SimpleNamespace] | None = None, text: str | None = None, tokens: int = 10
+    calls: list[SimpleNamespace] | None = None,
+    text: str | None = None,
+    tokens: int = 10,
+    prompt: int = 0,
 ) -> SimpleNamespace:
     msg = SimpleNamespace(content=text, tool_calls=calls or None)
     return SimpleNamespace(
-        choices=[SimpleNamespace(message=msg)], usage=SimpleNamespace(completion_tokens=tokens)
+        choices=[SimpleNamespace(message=msg)],
+        usage=SimpleNamespace(
+            prompt_tokens=prompt, completion_tokens=tokens, total_tokens=prompt + tokens
+        ),
     )
 
 
@@ -101,3 +108,30 @@ def test_tool_error_surfaced() -> None:
 
 def test_text_only_mode() -> None:
     assert run(Script(turn(text="final answer")), [], None) == "final answer"
+
+
+def test_token_usage_logged(caplog: pytest.LogCaptureFixture) -> None:
+    script = Script(
+        turn([call("echo", {"x": 1})], tokens=5, prompt=100),
+        turn(text="done", tokens=7, prompt=120),
+    )
+    with caplog.at_level(logging.INFO, logger="vk.llm"):
+        run_agent(
+            model="m",
+            system="s",
+            message="go",
+            tools=[ECHO],
+            output_schema=None,
+            max_output_tokens=1000,
+            complete=script,
+            name="analyst",
+        )
+    lines = [r.getMessage() for r in caplog.records]
+    assert (
+        "llm analyst model=m turn=1 prompt_tokens=100 completion_tokens=5 total_tokens=105" in lines
+    )
+    assert (
+        "llm analyst model=m turn=2 prompt_tokens=120 completion_tokens=7 total_tokens=127" in lines
+    )
+    assert "agent analyst tool=echo" in lines
+    assert "agent analyst done turns=2 prompt_tokens=220 completion_tokens=12" in lines

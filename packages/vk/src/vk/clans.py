@@ -1,6 +1,8 @@
 """The five clans as data: prompt, output schema, model and tool surface."""
 
+import logging
 import shutil
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,6 +19,8 @@ from vk.schemas import (
 )
 from vk.tooling import Tool
 from vk.tools import artifact_tools, harness_tools
+
+log = logging.getLogger(__name__)
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 # Agent instruction files a target repo may carry at its root, in injection order.
@@ -113,6 +117,8 @@ def run_clan(
     `complete` and `remote_url` are test seams (LLM call, git remote override).
     """
     clan = CLANS[name]
+    log.info("clan %s starting model=%s", name, cfg.model_for(name))
+    started = time.monotonic()
     repo_dir = git.clone_repo(cfg, remote_url=remote_url) if clan.needs_repo else None
     try:
         # Clans without a repo get a placeholder dir only for tools that ignore it.
@@ -125,8 +131,10 @@ def run_clan(
             tools=tools,
             output_schema=clan.schema,
             max_output_tokens=cfg.max_output_tokens,
+            name=name,
             **extra,
         )
+        log.info("clan %s finished in %.1fs", name, time.monotonic() - started)
         return cast(dict[str, Any], result)
     finally:
         if repo_dir is not None:

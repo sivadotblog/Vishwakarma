@@ -2,6 +2,7 @@
 
 import base64
 import json
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -12,6 +13,8 @@ import requests
 from vk.approval import Caller, Confirm, default_confirm, policy_for
 from vk.config import Config
 from vk.tooling import Tool, ToolError, ToolFn
+
+log = logging.getLogger(__name__)
 
 API = "https://api.github.com"
 API_VERSION = "2022-11-28"
@@ -42,8 +45,11 @@ class GitHub:
         try:
             resp = self.session.request(method, API + path, headers=headers, timeout=TIMEOUT, **kw)
         except requests.RequestException as exc:
+            log.warning("github %s %s failed: %s", method, path, type(exc).__name__)
             raise GitHubError(f"GitHub request failed: {exc}", 0) from exc
+        log.debug("github %s %s -> %d", method, path, resp.status_code)
         if not 200 <= resp.status_code < 300:
+            log.warning("github %s %s -> %d", method, path, resp.status_code)
             try:
                 message = resp.json().get("message", resp.text)
             except (ValueError, AttributeError):

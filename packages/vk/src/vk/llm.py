@@ -1,12 +1,15 @@
 """LiteLLM tool-calling loop with a synthetic `submit` tool for structured output."""
 
 import json
+import logging
 from collections.abc import Callable
 from typing import Any
 
 import litellm
 
 from vk.tooling import Tool
+
+log = logging.getLogger(__name__)
 
 MAX_SUBMIT_ATTEMPTS = 3
 SUBMIT = "submit"
@@ -67,11 +70,13 @@ def _spec(name: str, description: str, parameters: dict[str, Any]) -> dict[str, 
 
 def _run_tool(tool: Tool | None, raw_args: str) -> str:
     if tool is None:
+        log.warning("unknown tool requested")
         return json.dumps({"error": "unknown tool"})
     try:
         args = json.loads(raw_args or "{}")
         result = tool.fn(args)
     except Exception as exc:  # tool failures are model-visible by design
+        log.warning("tool %s failed: %s", tool.name, exc)
         return json.dumps({"error": str(exc)})
     return result if isinstance(result, str) else json.dumps(result, default=str)
 
@@ -85,6 +90,7 @@ def run_agent(
     output_schema: dict[str, Any] | None,
     max_output_tokens: int,
     complete: Callable[..., Any] = litellm.completion,
+    name: str = "agent",
 ) -> dict[str, Any] | str:
     """Run the loop; return the submitted object (schema mode) or the final text."""
     by_name = {t.name: t for t in tools}
@@ -98,46 +104,75 @@ def run_agent(
     ]
     spent = 0
     failures = 0
-    while True:
-        resp = complete(model=model, messages=messages, tools=specs or None)
-        spent += getattr(resp.usage, "completion_tokens", 0) or 0
-        if spent > max_output_tokens:
-            raise BudgetExceeded(f"{spent} output tokens exceeds budget {max_output_tokens}")
-        msg = resp.choices[0].message
-        calls = msg.tool_calls or []
-        entry: dict[str, Any] = {"role": "assistant", "content": msg.content}
-        if calls:
-            entry["tool_calls"] = [
-                {
-                    "id": c.id,
-                    "type": "function",
-                    "function": {"name": c.function.name, "arguments": c.function.arguments},
-                }
-                for c in calls
-            ]
-        messages.append(entry)
-        if not calls:
-            if output_schema is None:
-                return msg.content or ""
-            failures += 1
-            if failures >= MAX_SUBMIT_ATTEMPTS:
-                raise SubmitError("model stopped without calling submit")
-            messages.append({"role": "user", "content": f"Finish by calling `{SUBMIT}`."})
-            continue
-        for call in calls:
-            name, raw = call.function.name, call.function.arguments
-            if output_schema is not None and name == SUBMIT:
-                try:
-                    result = json.loads(raw or "{}")
-                    error = validate(result, output_schema)
-                except json.JSONDecodeError as exc:
-                    result, error = None, f"invalid JSON: {exc}"
-                if error is None:
-                    return result  # type: ignore[no-any-return]
+    turns = 0
+    prompt_total = 0
+    try:
+        while True:
+            resp = complete(model=model, messages=messages, tools=specs or None)
+            turns += 1
+            prompt = getattr(resp.usage, "prompt_tokens", 0) or 0
+            completion = getattr(resp.usage, "completion_tokens", 0) or 0
+            total = getattr(resp.usage, "total_tokens", 0) or 0
+            prompt_total += prompt
+            spent += completion
+            log.info(
+                "llm %s model=%s turn=%d prompt_tokens=%d completion_tokens=%d total_tokens=%d",
+                name,
+                model,
+                turns,
+                prompt,
+                completion,
+                total,
+            )
+            if spent > max_output_tokens:
+                raise BudgetExceeded(f"{spent} output tokens exceeds budget {max_output_tokens}")
+            msg = resp.choices[0].message
+            calls = msg.tool_calls or []
+            entry: dict[str, Any] = {"role": "assistant", "content": msg.content}
+            if calls:
+                entry["tool_calls"] = [
+                    {
+                        "id": c.id,
+                        "type": "function",
+                        "function": {"name": c.function.name, "arguments": c.function.arguments},
+                    }
+                    for c in calls
+                ]
+            messages.append(entry)
+            if not calls:
+                if output_schema is None:
+                    return msg.content or ""
                 failures += 1
+                log.warning("agent %s stopped without calling submit", name)
                 if failures >= MAX_SUBMIT_ATTEMPTS:
-                    raise SubmitError(f"invalid submit after {failures} attempts: {error}")
-                content = json.dumps({"error": f"Invalid submit, fix and call again: {error}"})
-            else:
-                content = _run_tool(by_name.get(name), raw)
-            messages.append({"role": "tool", "tool_call_id": call.id, "content": content})
+                    raise SubmitError("model stopped without calling submit")
+                messages.append({"role": "user", "content": f"Finish by calling `{SUBMIT}`."})
+                continue
+            for call in calls:
+                tool_name, raw = call.function.name, call.function.arguments
+                if output_schema is not None and tool_name == SUBMIT:
+                    try:
+                        result = json.loads(raw or "{}")
+                        error = validate(result, output_schema)
+                    except json.JSONDecodeError as exc:
+                        result, error = None, f"invalid JSON: {exc}"
+                    if error is None:
+                        return result  # type: ignore[no-any-return]
+                    failures += 1
+                    log.warning("agent %s invalid submit: %s", name, error)
+                    if failures >= MAX_SUBMIT_ATTEMPTS:
+                        raise SubmitError(f"invalid submit after {failures} attempts: {error}")
+                    content = json.dumps({"error": f"Invalid submit, fix and call again: {error}"})
+                else:
+                    log.info("agent %s tool=%s", name, tool_name)
+                    log.debug("agent %s tool=%s args=%s", name, tool_name, raw)
+                    content = _run_tool(by_name.get(tool_name), raw)
+                messages.append({"role": "tool", "tool_call_id": call.id, "content": content})
+    finally:
+        log.info(
+            "agent %s done turns=%d prompt_tokens=%d completion_tokens=%d",
+            name,
+            turns,
+            prompt_total,
+            spent,
+        )
